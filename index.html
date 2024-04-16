@@ -8,7 +8,7 @@
 	<link rel="icon" href="images/logo.ico" type="image/x-icon">
 	<link rel="apple-touch-icon" href="images/logo.png" />
 	<link rel="apple-touch-icon-precomposed" href="images/logo.png" />
-	
+
 	<title>THW Theorie</title>
 	<link rel="stylesheet" href="css/thw-1.3.1.min.css" />
 	<link rel="stylesheet" href="css/jquery.mobile.structure-1.3.1.min.css" />
@@ -29,12 +29,12 @@
 				onlineState = online;
 				$('#page-main a[href=#page-pdf]').toggleClass('ui-disabled', !onlineState);
 			}
-			
+
 			window.addEventListener('online', function(){ setOnlineState(true); });
 			window.addEventListener('offline', function(){ setOnlineState(false); });
 			setOnlineState(onlineState);
 		});
-		
+
 		try {
 			window.applicationCache.addEventListener('updateready', function(){
 				$('#popup-update').popup();
@@ -45,7 +45,7 @@
 		$(document).ajaxError(function(event, request, settings, error ) {
 			alert('Benötigte Datei "' + settings.url + '" konnte nicht geladen werden!\n' + error);
 		});
-		
+
 		function THWTheorie() {
 			/*
 			 *  properties
@@ -61,17 +61,18 @@
 				"2014" : {name: "Jan 2014 v2.0", file:"questions_2014v1.json"},
 				"2014v2" : {name: "Mrz 2014 v2.1", file:"questions_2014v2.json"},
 				"2014v3" : {name: "Dez 2014 v2.1", file:"questions_2014v3.json"},
-				"2020v33" : {name: "Mrz 2020 v3.3", file:"questions_2020v33.json"}
+				"2020v33" : {name: "Mrz 2020 v3.3", file:"questions_2020v33.json"},
+				"2022v34" : {name: "Mai 2022 v3.4", file:"questions_2022v34.json"}
 			}
 			this.defaultSettings = {
-				selectedQuestionSet: "2020v33",
+				selectedQuestionSet: "2022v34",
 				randomizeQuestions : false
 			};
 			this.loadedFromStorage = [];
 			this.questions = null;
 			this.flashcard;
 			this.settings;
-			
+
 			/*
 			 *  methods
 			 */
@@ -80,7 +81,7 @@
 				// do testing
 				if(localStorage['THWTheorie_' + name] && (doNotLoad == null || !doNotLoad))
 					obj = JSON.parse(localStorage['THWTheorie_' + name]);
-				
+
 				if(this.features.localStorage)
 				{
 					obj.save = function() {
@@ -118,13 +119,13 @@
 						throw new Error('Fragenkatalog konnte nicht geladen werden!');
 					}
 				});
-				
+
 				if(upgrade) {
 					this.statistic = new THWTheorie_Statistic(this, true);
 					this.flashcard = new THWTheorie_Flashcard(this, true);
 				}
 			}
-			
+
 			/*
 			 *  constructor
 			 */
@@ -132,7 +133,7 @@
 			try { this.features.json = typeof JSON == "object" && JSON && typeof JSON.parse == "function" && typeof JSON.stringify == "function"; } catch (e) {}
 			try { this.features.localStorage = 'localStorage' in window && window['localStorage'] !== null; } catch (e) {}
 			try { this.features.applicationCache = 'applicationCache' in window && window['applicationCache'] !== null; } catch (e) {}
-			
+
 			// JSON fallback
 			if(!this.features.json && this.features.localStorage)
 				$.ajax({
@@ -140,15 +141,15 @@
 					async: false,
 					dataType: "script"
 				});
-			
+
 			// load settings
 			this.settings = this.initStorage('settings', this.defaultSettings);
 			this.loadQuestionCatalog();
-			
+
 			this.statistic = new THWTheorie_Statistic(this, false);
 			this.flashcard = new THWTheorie_Flashcard(this, false);
 		}
-		
+
 		function THWTheorie_Statistic(owner, reset) {
 			/*
 			 *  properties
@@ -159,7 +160,7 @@
 				training : { total: 0, correct : 0 },
 				exam : { total: 0, correct : 0 }
 			};
-			
+
 			/*
 			 *  methods
 			 */
@@ -178,16 +179,16 @@
 			this.getStatistic = function() {
 				return this.data;
 			}
-			
+
 			/*
 			 *  constructor
 			 */
 			this.data = this.owner.initStorage('statistic', this.data, reset);
 		}
-		
+
 		function THWTheorie_Flashcard(owner, reset) {
 			this.owner = owner;
-			
+
 			/*
 			 *  properties
 			 */
@@ -200,18 +201,18 @@
 				// confidence (how well the answer is known)
 				confidence : [] // questionIndex => confidenceValue
 			};
-			
+
 			// settings for noting progress
 			this.settings = {
 				// size of first learn box, i.e. repeat interval for wrong
 				//	answers
 				boxSize : 20,
 				// how to calculate learn leven of question, used as
-				//	new_confidence = expireFactor * old_confidence 
+				//	new_confidence = expireFactor * old_confidence
 				//	 + (1 - expireFactor) * (answeredCorrect ? 1 : 0);
 				expireFactor : 0.5
 			};
-			
+
 			/*
 			 *  methods
 			 */
@@ -244,25 +245,25 @@
 			this.setMultipleQuestionResult = function(q2result) {
 				if(q2result == null)
 					q2result = {};
-				
+
 				// update confidence
 				for(var q in q2result)
 				{
-					this.progress.confidence[q] = 
+					this.progress.confidence[q] =
 						this.settings.expireFactor * this.progress.confidence[q]
 						+ (1 - this.settings.expireFactor) * (q2result[q] ? 1 : 0);
-					
+
 					this.owner.statistic.setTrainingResult(q2result[q]);
-					
+
 					// every ten questions: reduce global confidence to 99%
 					if(this.owner.statistic.data.training.total % 10 == 0)
 						for(var i in this.progress.confidence)
 							this.progress.confidence[i] *= 0.99
 				}
-				
+
 				var boxCorrect = [];
 				var boxIncorrect = [];
-				// get all questions of box that were answered 
+				// get all questions of box that were answered
 				for(var q in q2result)
 					if(this.progress.box.indexOf(parseInt(q)) != -1)
 					{
@@ -272,32 +273,32 @@
 							boxIncorrect.push(parseInt(q));
 						this.progress.box.splice(this.progress.box.indexOf(parseInt(q)), 1);
 					}
-				
+
 				// empty box even more if necessary (needed in case of size change of box)
 				while(this.progress.box.length > this.settings.boxSize)
 					boxIncorrect.push(this.progress.box.pop());
-				
+
 				// fill box with incorrect
 				while(this.progress.box.length < this.settings.boxSize && boxIncorrect.length)
 					this.progress.box.push(boxIncorrect.shift());
-				
+
 				// get all left => put in other
 				var leftOver = boxIncorrect.concat(boxCorrect);
-				while(leftOver.length) 
+				while(leftOver.length)
 					this.progress.other.push(leftOver.shift());
-				
+
 				// order
-				this.progress.other.sort(function(a,b){ 
-					return app.flashcard.progress.confidence[a] - app.flashcard.progress.confidence[b]; 
+				this.progress.other.sort(function(a,b){
+					return app.flashcard.progress.confidence[a] - app.flashcard.progress.confidence[b];
 				});
-				
+
 				// fill rest of box
 				while(this.progress.box.length < this.settings.boxSize)
 					this.progress.box.push(this.progress.other.shift());
-				
+
 				this.progress.save();
 			}
-			
+
 			/*
 			 *  constructor
 			 */
@@ -310,7 +311,7 @@
 				// fill q in random order
 				for(var i = 0; i < qs.length; i++)
 					q.splice(Math.floor(Math.random() * (q.length+1)), 0, i);
-				
+
 				// fill box and other & set no initial confidence
 				for(var i = 0; i < this.settings.boxSize; i++)
 					this.progress.box.push(q.shift());
@@ -345,7 +346,7 @@
 						{ x:  22.5, y : 0, text : 'Nr.', font: {fontStyle: 'bold'}  },
 						{ x:  37.5, y : 0, text : 'Frage', font: {fontStyle: 'bold'}  },
 						{ x: 107.5, y : 0, text : 'Antwortmöglichkeit(en) / Lösung', font: {fontStyle: 'bold'} }
-					] 
+					]
 				},
 				columns : {
 					nr : { x : 22.5 },
@@ -375,7 +376,7 @@
 					for(var c in app.questions.category)
 						categories.push(c);
 				}
-				
+
 				var q4cat = [];
 				var questions = [];
 				// check if we got enough questions
@@ -386,18 +387,18 @@
 							n: app.questions.category[categories[c]].list.length
 						});
 				var sum = q4cat.reduce(function(p, c) { return p + c.n; }, 0);
-				
+
 				if(sum < number) {
 					number = sum;
-					
+
 					for(var i in q4cat)
 						questions = questions.concat(app.questions.category[q4cat[i].c].list);
 				}
 				else {
-					// adjust question number of each cat  
+					// adjust question number of each cat
 					for(var i in q4cat)
 						q4cat[i].n *= number / sum;
-					
+
 					while(questions.length < number) {
 						q4cat.sort(function(a,b){ return b.n - a.n; });
 						var q;
@@ -412,20 +413,20 @@
 						q4cat[0].n -= 1;
 					}
 				}
-				
+
 				return this.shuffle(questions);
 			}
 			this.lastFont = {fontSize: 0, fontStyle: false, fontName: false};
 			this.setFont = function(font) {
 				var f = $.extend({}, this.layout.font, font);
-				
+
 				if(f.fontName != this.lastFont.fontName)
 					this.pdf.setFont(f.fontName);
 				if(f.fontStyle != this.lastFont.fontStyle)
 					this.pdf.setFontType(f.fontStyle);
 				if(f.fontSize != this.lastFont.fontSize)
 					this.pdf.setFontSize(f.fontSize);
-				
+
 				for(var i in f)
 					this.lastFont[i] = f[i];
 			}
@@ -442,11 +443,11 @@
 						ta.push(this.pdf.splitTextToSize(q.pdfAnswers[i], this.layout.columns.answers.width));
 					else
 						ta.push(this.pdf.splitTextToSize(q.answers[i], this.layout.columns.answers.width));
-					
+
 				var hL = this.layout.fontHeight;
 				var sL = this.layout.fontHeight * this.layout.lineSepFactor;
 				var sP = this.layout.fontHeight * this.layout.paragraphSepFactor;
-				
+
 				var taLNum = ta.reduce(function(p, c) { return p + c.length; }, 0);
 				var heightQuestion = tq.length * (hL + sL) - sL; // e.g. 3 lines, 2 line separations
 				var heightAnswers = taLNum * (hL + sL) - sL + (ta.length - 1) * (sP - sL);
@@ -454,15 +455,15 @@
 				var lines = [];
 				for(var i in this.layout.lines.box)
 					lines.push($.extend({},this.layout.lines.box[i],{
-						y1 : this.layout.lines.box[i].y1 * height, 
-						y2 : this.layout.lines.box[i].y2 * height 
+						y1 : this.layout.lines.box[i].y1 * height,
+						y2 : this.layout.lines.box[i].y2 * height
 					}));
 				var textOffset = hL * this.layout.textOffsetFactor;
-				
+
 				// calc in font height units
 				var text = [
 					$.extend({
-						y : textOffset + (height - hL) / 2, 
+						y : textOffset + (height - hL) / 2,
 						text: q.category + '.' + q.number
 					}, this.layout.columns.nr),
 					$.extend({
@@ -470,7 +471,7 @@
 						text : tq
 					}, this.layout.columns.question)
 				];
-				
+
 				var y = sP / 2;
 				var s = sP;
 				if(heightAnswers < heightQuestion) {
@@ -485,13 +486,13 @@
 						text : ta[n]
 					}, this.layout.columns.answers));
 					text.push($.extend({
-						y : textOffset + y + ((ta[n].length - 1) * (hL + sL) + sL) / 2, 
+						y : textOffset + y + ((ta[n].length - 1) * (hL + sL) + sL) / 2,
 						text : abc[n],
 					}, this.layout.columns.abc));
-					
+
 					if($.inArray(parseInt(i), q.correct) != -1 && solution)
 						text.push($.extend({
-							y : textOffset + y + ((ta[n].length - 1) * (hL + sL) + sL) / 2, 
+							y : textOffset + y + ((ta[n].length - 1) * (hL + sL) + sL) / 2,
 							text : 'X'
 						}, this.layout.columns.solution));
 					for(var j in this.layout.lines.answers)
@@ -503,20 +504,20 @@
 					n++;
 				}
 				lines.pop();
-				
+
 				return { height: height, text: text, lines: lines };
 			}
 			this.printQuestionSheet = function(qList, answers) {
 				this.pdf = new jsPDF('p', 'mm', 'a4');
 				this.lastFont = {fontSize: 0, fontStyle: false, fontName: false};
-				
+
 				var page = 0;
 				var yStart;
 				for(var i in qList) {
 					this.setFont({});
 					var l = this._layoutQuestion(qList[i], answers);
 					if(yStart + l.height > 297 - this.layout.border.bottom || page == 0) {
-						if(page++) 
+						if(page++)
 							this.pdf.addPage();
 						if(this.layout.pagesPos)
 							this.text(
@@ -533,10 +534,10 @@
 								this.pdf.setDrawColor(
 									this.layout.header.lines[i].color[0], this.layout.header.lines[i].color[0], this.layout.header.lines[i].color[2]
 								);
-							
+
 							this.pdf.setLineWidth(this.layout.header.lines[i].thickness);
 							this.pdf.line(
-								this.layout.header.lines[i].x1, this.layout.header.lines[i].y1 * this.layout.header.height + yStart, 
+								this.layout.header.lines[i].x1, this.layout.header.lines[i].y1 * this.layout.header.height + yStart,
 								this.layout.header.lines[i].x2, this.layout.header.lines[i].y2 * this.layout.header.height + yStart
 							);
 						}
@@ -549,7 +550,7 @@
 							);
 						yStart += this.layout.header.height;
 					}
-					
+
 					for(var t in l.text) {
 						this.text(
 							l.text[t].x,
@@ -557,12 +558,12 @@
 							l.text[t].text,
 							typeof(l.text[t].font) !== 'undefined' ? l.text[t].font : {}
 						);
-						
+
 					}
 					for(var i in l.lines) {
 						this.pdf.setLineWidth(l.lines[i].thickness);
 						this.pdf.line(
-							l.lines[i].x1, l.lines[i].y1 + yStart, 
+							l.lines[i].x1, l.lines[i].y1 + yStart,
 							l.lines[i].x2, l.lines[i].y2 + yStart
 						);
 					}
@@ -570,7 +571,7 @@
 				}
 				if(this.layout.pagesPos)
 					this.pdf.putTotalPages('\\[\\[PAGES\\]\\]');
-				
+
 				return this.pdf;
 			}
 			this.shuffle = function(o){
@@ -579,12 +580,12 @@
 				for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
 				return o;
 			};
-			
-			
+
+
 			this.layout = $.extend(config, this.layout);
 			this.layout.fontHeight = this.layout.font.fontSize / (72 / 25.4);
 		}
-		
+
 		function THWTheorie_UIHelper(app) {
 			this.app = app;
 			this.queue = {
@@ -601,7 +602,7 @@
 			};
 			this.displayQuestion = function(type, context, qid, option) {
 				var q = this.app.questions.questions[qid];
-				
+
 				html = '<h4 class="text">';
 				if(option.prefixTitle)
 					html += option.prefixTitle;
@@ -612,18 +613,18 @@
 
 				html += '<div data-role="fieldcontain">';
 				html += '<fieldset class="answers" data-qid="' + qid + '" data-role="controlgroup">';
-				
+
 				var answerOrder = [];
 				for(var no in q.answers)
 					if(!app.settings.randomizeQuestions || option.skipRandomize)
 						answerOrder.push(parseInt(no));
 					else
 						answerOrder.splice(Math.floor(Math.random() * (answerOrder.length+1)), 0, parseInt(no));
-				
+
 				for(var i = 0; i < answerOrder.length; i++)
 				{
 					var no = answerOrder[i];
-					
+
 					var correct = q.correct.indexOf(no) != -1;
 					var id = type + '_' + q.category + '_' + q.number + '_' + no;
 					html += '<input type="checkbox" id="' + id + '" ';
@@ -636,17 +637,17 @@
 				}
 				html += '</fieldset>';
 				html += '</div>';
-				
+
 				if(!context)
 					return html;
-				
+
 				context.removeClass('reveal').addClass('ask');
 				if(option.setTitle)
 					$('.title', context).text('Frage ' + q.category + '.' + q.number);
-				
+
 				$('.question', context).html(html).trigger('create');
 			}
-			
+
 			this.learn = {
 				page : '#page-ask',
 				start : function() {
@@ -666,16 +667,16 @@
 					$('#page-ask .answers input').each(function(){
 						correct &= $(this).is(':checked') == $(this).hasClass('correct');
 					});
-					
+
 					$('#page-ask .question, #q-continue')
 						.removeClass('correct incorrect')
 						.addClass(correct ? 'correct' : 'incorrect');
-					
+
 					$('#q-continue .ui-btn-text').text(correct
 						? "Richtig! - Weiter zur nächsten Frage..."
 						: "Falsch! - Weiter zur nächsten Frage..."
 					);
-					
+
 					app.flashcard.setFirstQuestionResult(correct);
 				},
 				reveal : function() {
@@ -685,7 +686,7 @@
 					var e = $(event.target).prop("tagName").toLowerCase() == 'a' ? $(event.target) : $(event.target).parents('a');
 					var id = e.attr('id');
 					var correct = id == 'q-known';
-					
+
 					app.flashcard.setFirstQuestionResult(correct);
 					ui.learn.show();
 					return false;
@@ -695,7 +696,7 @@
 					{
 						var k = event.which % 16 - 1;
 						if($(page + ' .answers input').length > k)
-							$(page + ' .answers input').eq(k).prop("checked", 
+							$(page + ' .answers input').eq(k).prop("checked",
 								!$(page + ' .answers input').eq(k).is(':checked')
 							).checkboxradio("refresh");
 					}
@@ -714,7 +715,7 @@
 				printQuestionList : function(event,prev) {
 					ui.questions.active = null;
 					$(window).off('keydown').on('keydown', ui.questions.keyboard);
-					$('#page-questions').toggleClass('setFocus', 
+					$('#page-questions').toggleClass('setFocus',
 						prev.prevPage.attr('id') == 'page-main'
 					);
 					var cat = '';
@@ -742,9 +743,9 @@
 					$('#page-questions ul').listview().listview('refresh');
 					$('#page-questions li a').on('click', function(){
 						ui.displayQuestion(
-							'answer', 
-							$('#popup-answer'), 
-							$(this).attr('data-q'), 
+							'answer',
+							$('#popup-answer'),
+							$(this).attr('data-q'),
 							{setTitle:true,setChecked:true,skipRandomize:true}
 						);
 						return true;
@@ -755,7 +756,7 @@
 						$('#page-questions .ui-input-search input').focus();
 				},
 				getLastOrFirst : function(getTop) {
-					var lastTop = $('#page-questions li[data-filtertext]:visible').last().position().top < 
+					var lastTop = $('#page-questions li[data-filtertext]:visible').last().position().top <
 						$('#page-questions li[data-filtertext]:visible').first().position().top;
 					if(lastTop == getTop)
 						return $('#page-questions li[data-filtertext]:visible').last();
@@ -775,13 +776,13 @@
 				keyboard : function(event) {
 					if(ui.questions.active && ui.questions.active.length)
 						ui.questions.active.trigger('mouseout');
-						
+
 					if($.inArray(event.which, [33,34,38,40,39,37]) != -1 && (!ui.questions.active || !ui.questions.active.length))
 						ui.questions.active = ui.questions.findTopDisplayedQuestion();
 					else if($.inArray(event.which, [33,34,38,40]) != -1)
 					{
 						var i = (event.which > 35 ? 1 : 10) * (event.which % 5 == 3 ? -1 : 1);
-						if(!$('#page-questions li[data-filtertext]:visible').length) 
+						if(!$('#page-questions li[data-filtertext]:visible').length)
 							i = 0;
 						var e = ui.questions.active, e2;
 						while(i != 0)
@@ -796,12 +797,12 @@
 						if(e && e.length)
 							ui.questions.active = e;
 					}
-					
+
 					else if(event.which == 39) // right arrow
 						$('a[data-q]', ui.questions.active).trigger('click');
 					else if(event.which == 37)
 						$('#popup-answer').popup('close');
-						
+
 					if($.inArray(event.which, [33,34,38,40]) != -1 && ui.questions.active && ui.questions.active.length)
 					{
 						$.mobile.silentScroll(ui.questions.active.position().top);
@@ -820,7 +821,7 @@
 							v: qnum * app.questions.category[c].list.length / app.questions.questions.length,
 							c: c
 						});
-					
+
 					var selection = [];
 					while(selection.length < qnum)
 					{
@@ -837,14 +838,14 @@
 						selection.push(q);
 						q4cat[0].v -= 1;
 					}
-					
+
 					return selection;
 				},
 				create : function(e,data) {
 					ui.exam.active = null;
 					if($(data.prevPage).attr('id') == 'diag-exam-result')
 						return;
-					
+
 					$('#page-exam').removeClass('reveal');
 					var html = '<div class="onreveal"><form><div class="ui-grid-b">';
 					html += '<div class="ui-block-a" style="padding-top:11px">';
@@ -860,14 +861,14 @@
 					html += '</div></div></form><hr /></div>';
 					html += '<a id="q-exam-check" href="#popup-exam-result" data-rel="popup" data-position-to="window" data-role="button">prüfen</a>';
 					$('#page-exam .content').html(html).trigger('create');
-					
+
 					$('#q-exam-check').on('click', ui.exam.showResult);
-					
+
 					var questions = ui.exam.getQuestionSelection();
 					for(var i in questions)
 					{
 						$('#q-exam-check').before(
-							'<div id="exam_q_' + i + '" class="question">' 
+							'<div id="exam_q_' + i + '" class="question">'
 							+ ui.displayQuestion('exam', false, questions[i], {
 								prefixTitle : (parseInt(i)+1) + '/' + questions.length + ': ',
 								setPostfix : true
@@ -877,7 +878,7 @@
 							ui.queue.add(function(){ $('#exam_q_' + i).trigger('create'); });
 						}(i));
 					}
-					
+
 					$('#exam-show-incorrect,#exam-show-correct').on('click', ui.exam.updateQuestionList);
 					$(window).off('keydown').on('keydown', ui.exam.keyboard);
 					ui.queue.run();
@@ -894,7 +895,7 @@
 					{
 						var k = event.which % 16 - 1;
 						if($('.answers input', ui.exam.active).length > k)
-							$('.answers input', ui.exam.active).eq(k).prop("checked", 
+							$('.answers input', ui.exam.active).eq(k).prop("checked",
 								!$('.answers input', ui.exam.active).eq(k).is(':checked')
 							).checkboxradio("refresh");
 					}
@@ -912,7 +913,7 @@
 				check : function() {
 					$('#page-exam').addClass('reveal');
 					$('#q-exam-check').hide();
-					
+
 					var result = {};
 					var correct = 0;
 					$('#page-exam .question').each(function() {
@@ -925,7 +926,7 @@
 						result[$(this).find('.answers').attr('data-qid')] = q_correct;
 					});
 					app.flashcard.setMultipleQuestionResult(result);
-					
+
 					return {
 						correct : $('#page-exam .question.correct').length,
 						insg : $('#page-exam .question').length
@@ -942,24 +943,24 @@
 				showResult : function() {
 					var result = ui.exam.check();
 					ui.exam.updateQuestionList();
-					
+
 					var res = '<p>Du hast ' + result.correct + ' von ' + result.insg + ' Fragen richtig beantwortet.</p>';
 					if(result.correct >= 32)
 						res += '<p class="correct">Damit hast du die Prüfung bestanden! Glückwunsch!</p>';
 					else
 						res += '<p class="incorrect">Damit hast du die Prüfung leider nicht bestanden!</p>';
 					res += '<a href="#" id="exam-popup-close" data-rel="back" data-role="button">OK</a>';
-					
+
 					app.statistic.setExamResult(result.correct >= 32);
 					$('#popup-exam-result .content').html(res).trigger('create');
-					
+
 					return true;
 				}
 			};
 			this.statistic = {
 				show : function() {
 					var s = app.statistic.getStatistic();
-					
+
 					var result = {"exam" : s.exam, "training" : s.training};
 					for(var i in result)
 					{
@@ -973,17 +974,17 @@
 						$('.rate', p).text(rate + ' %');
 						$('.bar .correct', p).css('width', rate + '%');
 					}
-					
+
 					ui.statistic.showConfidence();
 				},
 				showConfidence : function () {
 					var c = app.flashcard.progress.confidence.slice();
 					c.sort(function(a,b){return b-a;});
-					
+
 					// empiric derived compensation for aging
 					for(var i = 0; i < c.length; i++)
 						c[i] /= 0.83 * Math.pow(0.99, i/10);
-					
+
 					var w = c.length;
 					var h = 100;
 					var oldConf = -1;
@@ -995,7 +996,7 @@
 					var d1 = 2;
 					var d2 = 2;
 					var e = 10;
-					
+
 					var steps = [dx + ',' + (dy+h)];
 					for(var i = 0; i < c.length; sumConf+= c[i++])
 						if(oldConf != c[i])
@@ -1007,7 +1008,7 @@
 						}
 					steps.push((dx+i) + ',' + (dy+h*(1-oldConf)));
 					steps.push((dx+i) + ',' + (dy+h));
-					
+
 					var html = '<svg class="confidence" preserveAspectRatio="xMinYMin" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 '+(dx+ex+w)+' '+(dy+ey+h)+'">';
 					html += '<rect x="'+dx+'" y="'+dy+'" width="'+w+'" height="'+h+'" style="fill:rgb(255,0,0);" />';
 					html += '<polygon points="'+steps.join(' ')+'" style="fill:rgb(0,255,0);stroke:rgb(255,255,0);stroke-width:1" />';
@@ -1016,7 +1017,7 @@
 					html += '<text x="70" y="122" fill="black" style="font-size:10px" transform="rotate(0 0,0)">Fragenkatalog</text>';
 					html += '<text x="-90" y="16" fill="black" style="font-size:10px" transform="rotate(-90 0,0)">Korrektheit</text>';
 					html += '</svg>'
-					
+
 					$('#popup-statistic .box').html(html);
 					$('#popup-statistic .percent').text(Math.round(100 * sumConf / c.length) + ' %');
 				}
@@ -1066,7 +1067,7 @@
 					$('#pdf-cat-select fieldset').html(html)
 					$('#pdf-cat-select').trigger('create');
 					$('#pdf-question-num').attr('max', app.questions.questions.length).slider("refresh");
-					
+
 					ui.pdf.loadScripts();
 				},
 				loadScripts : function(e) {
@@ -1074,7 +1075,7 @@
 					try { if(jsPDF) loaded = true; } catch(e) {}
 					if(loaded)
 						return;
-					
+
 					$.when(
 						$.getScript("js/jspdf.js"),
 						$.getScript("js/FileSaver.js/FileSaver.js"),
@@ -1096,13 +1097,13 @@
 					});
 					if(!pdf)
 						pdf = new THWTheorie_PDF()
-					
+
 					var num = $('#pdf-question-num').val();
-					if(!num) 
+					if(!num)
 						num = 40;
-					
+
 					ui.pdf.questions = pdf.getRandomSelection(num, cats);
-					
+
 					$('#pdf-show-questions,#pdf-show-answers').removeClass('ui-disabled');
 					$('#pdf-save-questions,#pdf-save-answers').removeClass('ui-disabled');
 				},
@@ -1115,7 +1116,7 @@
 				},
 			}
 		}
-		
+
 		var app;
 		var ui;
 		var pdf = false;
@@ -1126,10 +1127,10 @@
 			// @todo display startup errors
 			alert(e.message);
 		}
-		
+
 		$(document).ready(function(){
 			try { runningOnPhonegap = document.URL.indexOf( 'http://' ) === -1 && document.URL.indexOf( 'https://' ) === -1; } catch(e) {}
-			
+
 			// Lernen
 			$("#page-ask,#page-show").on("pagebeforeshow", ui.learn.start);
 			$('#q-check').on('click', ui.learn.check);
@@ -1137,39 +1138,39 @@
 			$('#q-continue').on('click', ui.learn.show);
 			$('#q-not-known').on('click', ui.learn.markResult);
 			$('#q-known').on('click', ui.learn.markResult);
-			
+
 			// Nachschlagen
 			$('#page-questions').on("pagebeforeshow", ui.questions.printQuestionList);
 			$('#page-questions').on("pageshow", ui.questions.afterDisplay);
-			
+
 			// Prüfung
 			$('#page-exam').on('pagebeforeshow', ui.exam.create);
 			$("#popup-exam-result").on( "popupafterclose", function(){ $.mobile.silentScroll(0); } );
-			
+
 			// Statistik
 			$('#m-popup-statistic').on('click', ui.statistic.show);
-			
+
 			// info
 			$('#lern-info-mehr').on('click', function(){
 				$('#diag-lern-info .detail').toggle();
 			});
-			
+
 			// Einstellungen
 			$('#page-settings').on('pagebeforeshow', ui.settings.show);
 			$('#set-save').on('click', ui.settings.save);
 			$('#set-reset').on('click', ui.settings.reset);
-			
+
 			$("#page-pdf").on("pagebeforeshow", ui.pdf.show);
 			$('#pdf-select-questions').on('click', ui.pdf.select);
-			
+
 			$('#pdf-show-questions').on('click', function(){ ui.pdf.generate('show','questions'); });
 			$('#pdf-show-answers').on('click', function(){ ui.pdf.generate('show','answers'); });
 			$('#pdf-save-questions').on('click', function(){ ui.pdf.generate('save','questions'); });
 			$('#pdf-save-answers').on('click', function(){ ui.pdf.generate('save','answers'); });
-			
+
 			// Exit on phonegap
 			$('#page-mail-exit').toggle(runningOnPhonegap);
-			
+
 			// reload action
 			$('#update-reload').on('click', function(){ location.reload(); });
 		});
@@ -1276,7 +1277,7 @@
 				Eine neue Version der Anwendung ist verfügbar.
 				<fieldset class="ui-grid-a">
 				  <div class="ui-block-a"><button id="update-reload" type="submit" data-theme="c">Gleich laden</button></div>
-				  <div class="ui-block-b"><button type="submit" data-theme="a" data-rel="back">Später</button></div>	   
+				  <div class="ui-block-b"><button type="submit" data-theme="a" data-rel="back">Später</button></div>
 				</fieldset>
 			</div>
 		</div>
@@ -1313,7 +1314,7 @@
 			<a id="q-reveal" href="#" data-role="button">Antworten zeigen</a>
 			<div class="ui-grid-a good">
 				<div class="ui-block-a"><a id="q-not-known" class="incorrect" href="#" data-role="button">nicht gewusst</a></div>
-				<div class="ui-block-b"><a id="q-known" class="correct" href="#" data-role="button">gewusst</a></div>     
+				<div class="ui-block-b"><a id="q-known" class="correct" href="#" data-role="button">gewusst</a></div>
 			</div>
 		</div>
 	</div>
@@ -1361,14 +1362,14 @@
 			<hr />
 			<a class="detail" id="lern-info-mehr" data-role="button">mehr Infos</a>
 			<div class="detail" style="display:none">
-				<p>Das System unterteilt den Fragenkatalog in zwei Bereiche, die Abfrage-Box und die Sammel-Box. Die Abfrage-Box hat eine feste Größe von <span class="info-boxSize"></span> Fragen und wird immer von hinten aufgefüllt. Die Sammel-Box enthält die restlichen Fragen und ist entsprechend deines Lernfortschritts bei jeder Frage sortiert.</p> 
+				<p>Das System unterteilt den Fragenkatalog in zwei Bereiche, die Abfrage-Box und die Sammel-Box. Die Abfrage-Box hat eine feste Größe von <span class="info-boxSize"></span> Fragen und wird immer von hinten aufgefüllt. Die Sammel-Box enthält die restlichen Fragen und ist entsprechend deines Lernfortschritts bei jeder Frage sortiert.</p>
 				<p>Abgefragt wird immer die vorderste Karte der Abfrage-Box. Beantwortest du die Frage falsch, kommt sie ans Ende der Box, wird also genau nach <span class="info-boxSize"></span> Fragen wiederholt. Ist die Antwort richtig kommt die Frage in die Sammel-Box, einsortiert je nach deinem Lernfortschritt im Vergleich zu den anderen Fragen. Die fehlende Stelle in der Abfrage-Box wird mit der ersten Frage aus der Sammel-Box, also der wahrscheinlich schwierigsten Frage aus dieser Box, aufgefüllt.</p>
 				<p>Je öfter du eine Frage richtig beantwortest, je weiter hinten wird sie einsortiert und damit seltner abgefragt.</p>
 				<p>Das Verfahren ist natürlich vom <a href="http://de.wikipedia.org/wiki/Lernkartei">Lernkartei-System</a> inspiriert.</p>
-			
+
 				<p>Um abzuschätzen wie sicher du bei einer Frage bist, wird eine Methode namens <a href="http://de.wikipedia.org/wiki/Exponentielle_Gl%C3%A4ttung">exponentielle Glättung</a> verwendet. Das funktioniert folgendermaßen:</p>
-				<p>Wenn du eine Frage noch nicht beantwortet hast, nimmt das Programm an, dass du die Antwort nicht weißt, also initial 0% Lernfortschritt hast. Beantwortest du die Frage richtig, wird dein aktueller Lernstand (100% für richtig) anteilig mit dem alten Lernfortschritt zum neuen Lernfortschritt zusammengesetzt.</p>  
-				<p>Den Anteil kannst du einstellen, er liegt aktuell bei <span class="info-expire"></span> des alten Lernstands.</p> 
+				<p>Wenn du eine Frage noch nicht beantwortet hast, nimmt das Programm an, dass du die Antwort nicht weißt, also initial 0% Lernfortschritt hast. Beantwortest du die Frage richtig, wird dein aktueller Lernstand (100% für richtig) anteilig mit dem alten Lernfortschritt zum neuen Lernfortschritt zusammengesetzt.</p>
+				<p>Den Anteil kannst du einstellen, er liegt aktuell bei <span class="info-expire"></span> des alten Lernstands.</p>
 			</div>
 			<a href="#" data-rel="back" data-role="button">OK</a>
 		</div>
@@ -1391,9 +1392,9 @@
 							<option value="2006">2006</option>
 							<option value="2013">2013</option>
 						</select>
-					</div>	   
+					</div>
 				</div>
-				
+
 				<h2>Lernfortschritt</h2>
 				<div class="ui-grid-a">
 					<div class="ui-block-a">
@@ -1401,7 +1402,7 @@
 					</div>
 					<div class="ui-block-b">
 						<input type="range" id="set-box-size" data-highlight="true" min="10" max="50" value="" />
-					</div>	   
+					</div>
 				</div>
 				<div class="ui-grid-a">
 					<div class="ui-block-a">
@@ -1409,7 +1410,7 @@
 					</div>
 					<div class="ui-block-b">
 						<input type="range" id="set-expire-factor" data-highlight="true" min="10" max="70" value="" />
-					</div>	   
+					</div>
 				</div>
 				<div class="ui-grid-a">
 					<div class="ui-block-a">
@@ -1420,7 +1421,7 @@
 							<option value="on">Mischen</option>
 							<option value="off">Nicht mischen</option>
 						</select>
-					</div>	   
+					</div>
 				</div>
 			</form>
 			<a id="set-save" href="#" data-rel="back" data-role="button">speichern</a>
@@ -1446,7 +1447,7 @@
 				</div>
 				<div class="ui-block-b">
 					<input type="range" id="pdf-question-num" data-highlight="true" min="1" max="" value="40" />
-				</div>	   
+				</div>
 			</div>
 			<a id="pdf-select-questions" class="ui-disabled" data-role="button">Fragenauswahl (neu) erzeugen</a>
 			<hr />
@@ -1468,19 +1469,19 @@
 		<div class="content" data-role="content">
 			<h1>WebApp</h1>
 			<p>
-				Diese WebApp auf Basis von JQuery und JQuery Mobile ermöglicht eine effektive Vorbereitung 
-				auf die <a href="http://www.thw.de/">THW</a> Theorieprüfung. Der komplette Fragenkatalog wird 
-				abgefragt, wobei Fragen die besonders oft falsch beantwortet wurden, häufiger wiederholt werden. 
+				Diese WebApp auf Basis von JQuery und JQuery Mobile ermöglicht eine effektive Vorbereitung
+				auf die <a href="http://www.thw.de/">THW</a> Theorieprüfung. Der komplette Fragenkatalog wird
+				abgefragt, wobei Fragen die besonders oft falsch beantwortet wurden, häufiger wiederholt werden.
 			</p>
 			<p>
 				Die Anwendung kann in allen modernen Browsern, ob mobil oder am PC, offline verwendet werden. Am
-				Besten ein Lesezeichen auf die Startseite setzen und dieses dann immer aufrufen. Der Lernfortschritt 
+				Besten ein Lesezeichen auf die Startseite setzen und dieses dann immer aufrufen. Der Lernfortschritt
 				bleibt über mehrere Sitzungen erhalten.
 			</p>
-			
+
 			<h2>Bedienung</h2>
 			<p>
-				Neben der offensichtlichen Steuerung der App per Maus und Touch, werden auch Tastatureingaben unterstützt. 
+				Neben der offensichtlichen Steuerung der App per Maus und Touch, werden auch Tastatureingaben unterstützt.
 			</p>
 			<h3>Lernen - Lösungen eingeben</h3>
 			<p>
@@ -1494,7 +1495,7 @@
 			<p>
 				Über die Cursortasten <b>&uarr;</b> und <b>&darr;</b> kann zwischen den Fragen umgeschaltet werden, und mittels <b>1</b>, <b>2</b> und <b>3</b>, bzw. <b>a</b>, <b>b</b> und <b>c</b> die Antwort eingegeben werden.
 			</p>
-			
+
 			<hr />
 			<h1>Juristische Erklärungen</h1>
 			<p>
@@ -1505,24 +1506,24 @@
 				<a rel="license" href="//creativecommons.org/licenses/by-nc-sa/3.0/de/"><img alt="Creative Commons Lizenzvertrag" style="border-width:0" src="//i.creativecommons.org/l/by-nc-sa/3.0/de/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">THW Theorie WebApp</span> von <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Robert Wolke</span> steht unter einer <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/de/">Creative Commons Namensnennung - Nicht-kommerziell - Weitergabe unter gleichen Bedingungen 3.0 Deutschland Lizenz</a>.
 			</p>
 			<p>
-				Auf Grundlage dieser Lizenz kann die WebApp gerne weiterentwickelt und auch selbst gehostet werden. Verbesserungsvorschläge und Pull Requests können gerne über GitHub eingereicht werden. 
+				Auf Grundlage dieser Lizenz kann die WebApp gerne weiterentwickelt und auch selbst gehostet werden. Verbesserungsvorschläge und Pull Requests können gerne über GitHub eingereicht werden.
 			</p>
-			
+
 			<h2>Marke THW</h2>
 			<p>
-				Der Zahnkranz, der im Icon der Seite verwendet wird, ist eine eingetragene Wort-Bildmarke der Bundesanstalt Technisches Hilfswerk. Sie wird hier nur dekorativ zum Verweis auf die Bundesanstalt verwendet. 
+				Der Zahnkranz, der im Icon der Seite verwendet wird, ist eine eingetragene Wort-Bildmarke der Bundesanstalt Technisches Hilfswerk. Sie wird hier nur dekorativ zum Verweis auf die Bundesanstalt verwendet.
 			</p>
-			
+
 			<h2>Haftungsausschluss</h2>
 			<p>
-				Diese WebApp dient als Hilfsmittel zur Vorbereitung für die THW-Grundausbildung. Trotz sorgfältiger Prüfung und Tests übernehme ich keine Haftung für die Korrektheit und Vollständigkeit der Fragen, Antwortmöglichkeiten und Angaben zur richtigen Antwort. Die Verwendung erfolgt somit auf eigene Gefahr. 
+				Diese WebApp dient als Hilfsmittel zur Vorbereitung für die THW-Grundausbildung. Trotz sorgfältiger Prüfung und Tests übernehme ich keine Haftung für die Korrektheit und Vollständigkeit der Fragen, Antwortmöglichkeiten und Angaben zur richtigen Antwort. Die Verwendung erfolgt somit auf eigene Gefahr.
 			</p>
-			
+
 			<h2>Impressum</h2>
 			<p>
 				Diese Seite verfügt über kein Impressum nach deutschem Recht:<br />
-				Ein Impressum gemäß § 5 TMG ist nicht erforderlich, da es sich nicht um einen geschäftsmäßigen Dienst, 
-				sondern eine private Seite handelt. Ebenso werden keine journalistisch-redaktionelle Inhalte veröffentlich, 
+				Ein Impressum gemäß § 5 TMG ist nicht erforderlich, da es sich nicht um einen geschäftsmäßigen Dienst,
+				sondern eine private Seite handelt. Ebenso werden keine journalistisch-redaktionelle Inhalte veröffentlich,
 				sodass ein Impressum nach § 55 RstV ebenfalls nicht erforderlich ist.<br />
 				Für Fragen und Hinweise bin ich über <a href="mailto:r.wolke+app@thw-rostock.de">r.wolke+app@thw-rostock.de</a> zu erreichen.
 			</p>
